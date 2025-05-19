@@ -1,0 +1,57 @@
+.container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+}
+
+#menu {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#menu>button {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    padding-inline: 3px;
+    padding-block: 4px;
+    cursor: pointer;
+    border-radius: 1px;
+}
+
+#menu>button[data-selectingtarget="true"] {
+    background-color: purple;
+    color: white
+}
+
+#menu>button[data-selectingStartCell="true"] {
+    background-color: blue;
+    color: white
+}
+
+#menu>button[data-creatingWalls="true"] {
+    background-color: green;
+    color: white;
+}
+
+#menu>button[data-removingWalls="true"] {
+    background-color: red;
+    color: white;
+}
+
+#menu>button:hover {
+    outline: 1px solid black;
+}
+
+
+
+
+#myCanvas {
+    box-shadow: 0px 0px 3px 1px gray;
+}
+
+;
