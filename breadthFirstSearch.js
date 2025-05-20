@@ -39,7 +39,7 @@ function getNeighbours(grid, currentCell) {
         { x: 1, y: 0 },
         { x: -1, y: 0 },
         { x: 0, y: 1 },
-        { x: 0, y: -1 }
+        { x: 0, y: -1 },
     ];
     directions.forEach(dir => {
         const nx = dir.x + x;

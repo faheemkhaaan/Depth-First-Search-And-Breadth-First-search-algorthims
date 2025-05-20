@@ -36,7 +36,14 @@ let drawingPathCellIndex = 0;
 let grid = generateGrid();
 drawGrid(grid);
 resetBtn.addEventListener("click", () => {
-    reset()
+    startCell = null;
+    targetCell = null;
+    foundPath = null
+    visitedCells = null
+    grid.forEach(row => row.forEach(cell => { cell.isVisited = false; cell.parent = null; cell.isWall = false }));
+    drawingPathCellIndex = 0;
+    drawingVisitedCellIndex = 0;
+    drawGrid(grid);
 })
 randomDirectionsBtn.addEventListener("click", () => {
     if (randomDirections) {
@@ -130,33 +137,38 @@ startCellBtn.addEventListener("click", () => {
 });
 
 
-
+let lastCell = null;
 canvas.addEventListener("mousedown", (e) => {
+    const x = Math.floor(e.offsetX / cellSize);
+    const y = Math.floor(e.offsetY / cellSize);
+    lastCell = { x, y };
+
     if (creatingWalls) {
-        canvas.addEventListener("mousemove", drawWalls);
+        grid[y][x].isWall = true;
+    } else if (removingWalls) {
+        grid[y][x].isWall = false;
     }
-    if (removingWalls) {
-        canvas.addEventListener("mousemove", removeWalls);
-        console.log('Removing walls')
+    drawGrid(grid);
+});
+canvas.addEventListener("mousemove", (e) => {
+    if (!lastCell) return;
+
+    const x = Math.floor(e.offsetX / cellSize);
+    const y = Math.floor(e.offsetY / cellSize);
+
+    // If mouse moved to a new cell
+    if (x !== lastCell.x || y !== lastCell.y) {
+        // Draw line between last cell and current cell
+        drawLine(lastCell.x, lastCell.y, x, y);
+        lastCell = { x, y };
+        drawGrid(grid);
     }
 });
 canvas.addEventListener("mouseup", (e) => {
-    if (creatingWalls) {
-        canvas.removeEventListener("mousemove", drawWalls)
-    }
-    if (removingWalls) {
-        canvas.removeEventListener("mousemove", removeWalls);
-    }
+    lastCell = null
 });
 canvas.addEventListener("mouseleave", () => {
-    if (creatingWalls) {
-        canvas.removeEventListener("mousemove", drawWalls)
-    }
-    if (removingWalls) {
-        canvas.removeEventListener("mousemove", removeWalls);
-        console.log('Removing walls')
-
-    }
+    lastCell = null
 })
 createWallBtn.addEventListener("click", () => {
     handleSelectingStartCell(false)
@@ -226,7 +238,8 @@ function handleSelectingRemoveWallCell(bool) {
 function generateGrid() {
     const grid = []
     const rows = Math.floor(width / cellSize);
-    const cols = Math.floor(height / cellSize)
+    const cols = Math.floor(height / cellSize);
+
     for (let y = 0; y < cols; y++) {
         let row = []
         for (let x = 0; x < rows; x++) {
@@ -244,7 +257,7 @@ function generateGrid() {
 }
 
 function drawGrid(grid = []) {
-    ctx.clearRect(0, 0, width, height)
+    ctx.clearRect(0, 0, width, height);
     grid.forEach(row => {
         row.forEach(cell => {
             if (cell.x === targetCell?.x && cell.y == targetCell?.y) {
@@ -259,20 +272,22 @@ function drawGrid(grid = []) {
             }
             if (cell.isWall) {
                 ctx.beginPath();
-                ctx.fillStyle = 'black'
+                ctx.fillStyle = 'rgb(6, 82, 78)'
                 ctx.fillRect(cell.x * cellSize, cell.y * cellSize, cellSize, cellSize);
             } else {
                 if (outlines) {
                     ctx.beginPath();
                     ctx.strokeStyle = 'gray'
-                    ctx.strokeRect(cell.x * cellSize, cell.y * cellSize, cellSize, cellSize)
+                    ctx.strokeRect(cell.x * cellSize, cell.y * cellSize, cellSize, cellSize);
+
                 }
             }
+
         });
     });
 }
 
-function rect(cell, color = 'green') {
+function rect(cell, color = 'rgb(49, 175, 206)') {
     ctx.beginPath();
     ctx.fillStyle = color
 
@@ -282,6 +297,7 @@ function rect(cell, color = 'green') {
         ctx.strokeRect(cell.x * cellSize, cell.y * cellSize, cellSize, cellSize)
 
     }
+
 
 }
 animate()
@@ -299,7 +315,7 @@ function animate() {
             if (drawingPathCellIndex === 0) {
                 rect(foundPath[drawingPathCellIndex], 'orange')
             }
-            rect(foundPath[drawingPathCellIndex], 'red')
+            rect(foundPath[drawingPathCellIndex], 'rgb(219, 189, 68)')
             drawingPathCellIndex++
 
         }
@@ -318,19 +334,66 @@ function drawWalls(e) {
     if (creatingWalls) {
         grid[y][x].isWall = true;
     }
-    console.log(grid[y][x])
+
     drawGrid(grid)
 };
 
-function removeWalls(e) {
+function removeWalls(x, y) {
     console.log('Removing walls')
 
-    const x = Math.floor(e.offsetX / cellSize);
-    const y = Math.floor(e.offsetY / cellSize);
+    // const x = Math.floor(e.offsetX / cellSize);
+    // const y = Math.floor(e.offsetY / cellSize);
     if (removingWalls) {
-        grid[y][x].isWall = false;
+        const directions = [
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 1, y: 1 },
+            { x: -1, y: 1 },
+            { x: -1, y: -1 },
+            { x: 1, y: -1 },
+        ];
+        directions.forEach(dir => {
+            const nx = dir.x + x;
+            const ny = dir.y + y;
+
+            if (nx >= 0 && nx < grid[0].length && ny >= 0 && ny < grid.length) {
+                grid[ny][nx].isWall = false;
+            }
+        })
     };
     console.log(grid[y][x])
 
-    drawGrid(grid)
+}
+
+function drawLine(x0, y0, x1, y1) {
+    // Bresenham's line algorithm
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = (x0 < x1) ? 1 : -1;
+    const sy = (y0 < y1) ? 1 : -1;
+    let err = dx - dy;
+
+    while (true) {
+        // Set wall state for current cell
+        if (creatingWalls) {
+            grid[y0][x0].isWall = true;
+        } else if (removingWalls) {
+            // grid[y0][x0].isWall = false;
+            removeWalls(x0, y0)
+        }
+
+        if (x0 === x1 && y0 === y1) break;
+
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
 }
